@@ -1,5 +1,6 @@
-#!/usr/bin/python3
+#!/opt/homebrew/bin/python3
 
+import argparse
 import ipaddress
 import json
 import urllib.request
@@ -20,23 +21,31 @@ def write_to_list(rangelist):
     return allips
 
 
-def write_location(location, rangelist, time):
+def write_location(location, rangelist, directory, time):
     location = location.replace(", ","_").replace(" ","_")
-    path = './'+DIRECTORY+'/'+time+location.replace(" ","_").replace(",","_")+'.txt'
+    path = './'+directory+'/'+time+location.replace(" ","_").replace(",","_")+'.txt'
     ips = write_to_list(rangelist)
     with open(path, 'w+') as f:
         for ip in ips:
             f.write(ip + '\n')
 
-def make_ip_list_files():
+def make_ip_list_files(directory=DIRECTORY):
     time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S_')
     try:
-        os.mkdir(DIRECTORY)
+        os.mkdir(directory)
     except FileExistsError:
         pass
     allranges = get_ip_ranges(IP_RANGE_URL)
     for cidr in allranges:
-        write_location(cidr, allranges[cidr], time)
+        write_location(cidr, allranges[cidr], directory, time)
 
-if __name__ == '__main__':
-    make_ip_list_files()
+if __name__=='__main__':
+    parser = argparse.ArgumentParser(
+                    prog='Create text files containing all possible IP addresses for New Relic Synthetics Public Locations',
+                    description='Create text files containing all possible IP addresses for New Relic Synthetics Public Locations',
+                    epilog='specify a directory to put the files in')
+    parser.add_argument('directory', nargs='?', type=str, default=DIRECTORY,
+                    help='name of a directory to place the text files in.')
+
+    args = parser.parse_args()
+    make_ip_list_files(args.directory)
